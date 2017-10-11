@@ -5,10 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "botbuilder": "^3.10.2",
-    "restify": "^6.0.1",
-    "bluebird": "^3.5.0",
-    "lodash": "^4.17.4",
-    "schema-inspector": "^1.6.8"
+    "restify": "^6.0.1"
   },
   "devDependencies": {
     "request": "^2.81.0",
