@@ -29,7 +29,9 @@ server.post('/api/messages', connector.listen());
 * ---------------------------------------------------------------------------------------- */
 
 // Create your bot with a function to receive messages from the user
-var bot = new builder.UniversalBot(connector);
+var bot = new builder.UniversalBot(connector, function (session) {
+    session.send('Sorry, the OMS autobot didn\'t understand \'%s\'. Type \'order\' if you would like to place an order.', session.message.text);
+});
 
 // Make sure you add code to validate these fields
 var luisAppId = process.env.LuisAppId;
@@ -45,7 +47,7 @@ var intents = new builder.IntentDialog({ recognizers: [recognizer] })
 .matches('<yourIntent>')... See details at http://docs.botframework.com/builder/node/guides/understanding-natural-language/
 */
 .onDefault((session) => {
-    session.send('Sorry, I did not understand \'%s\'.', session.message.text);
+    session.send('Sorry, Alex  did not understand \'%s\'.', session.message.text);
 });
 
 bot.dialog('/', intents);    
