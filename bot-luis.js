@@ -14,8 +14,9 @@ const bot = module.exports = new builder.UniversalBot(connector, function (sessi
     session.send('Sorry, the OMS autobot didn\'t understand \'%s\'. Type \'order\' if you would like to place an order.', session.message.text);
 });
 
-console.log(process.env.LUIS_MODEL_URL)
-var recognizer = new builder.LuisRecognizer(process.env.LUIS_MODEL_URL);
+const luisUrl = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/40bb5710-6605-411c-b2e4-def1113b8ead?subscription-key=8363b631fdc04d2eb76db7ecdd1595e2&staging=true&verbose=true&timezoneOffset=0&q='
+console.log(luisUrl)
+var recognizer = new builder.LuisRecognizer(luisUrl);
 bot.recognizer(recognizer);
 
 bot.dialog('Order', [

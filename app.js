@@ -1,5 +1,3 @@
-require('dotenv-extended').load();
-
 var restify = require('restify');
 const bot = require('./bot-luis.js');
 
