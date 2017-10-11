@@ -4,8 +4,12 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
-    "botbuilder": "^3.8.4",
-    "restify": "^5.0.0"
+    "botbuilder": "^3.10.2",
+    "dotenv-extended": "^2.0.0",
+    "restify": "^6.0.1",
+    "bluebird": "^3.5.0",
+    "lodash": "^4.17.4",
+    "schema-inspector": "^1.6.8"
   },
   "devDependencies": {
     "request": "^2.81.0",
