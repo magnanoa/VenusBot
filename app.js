@@ -35,7 +35,15 @@ var bot = new builder.UniversalBot(connector, function (session) {
     session.send('Sorry, the OMS autobot didn\'t understand \'%s\'. Type \'order\' if you would like to place an order.', session.message.text);
 });
 
-const LuisModelUrl = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/40bb5710-6605-411c-b2e4-def1113b8ead?subscription-key=8363b631fdc04d2eb76db7ecdd1595e2&staging=true&verbose=true&timezoneOffset=0&q='
+
+// Make sure you add code to validate these fields
+var luisAppId = process.env.LuisAppId;
+var luisAPIKey = process.env.LuisAPIKey;
+var luisAPIHostName = process.env.LuisAPIHostName || 'westus.api.cognitive.microsoft.com';
+
+const LuisModelUrl = 'https://' + luisAPIHostName + '/luis/v2.0/apps/' + luisAppId + '?subscription-key=' + luisAPIKey + '&staging=true&verbose=true&timezoneOffset=0&q=';
+
+//const LuisModelUrl = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/40bb5710-6605-411c-b2e4-def1113b8ead?subscription-key=8363b631fdc04d2eb76db7ecdd1595e2&staging=true&verbose=true&timezoneOffset=0&q='
 
 console.log(LuisModelUrl)
 var recognizer = new builder.LuisRecognizer(LuisModelUrl);
