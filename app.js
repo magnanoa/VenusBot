@@ -4,6 +4,7 @@ A simple echo bot for the Microsoft Bot Framework.
 
 var restify = require('restify');
 var builder = require('botbuilder');
+var request = require('request').defaults({ encoding: null });
 
 var luis = require('./luis.json');
 
@@ -35,6 +36,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
     session.send('Sorry, the OMS autobot didn\'t understand \'%s\'. Type \'order\' if you would like to place an order.', session.message.text);
 });
 
+var botLoggerHostName = process.env.BotLogHostName;
 
 // Make sure you add code to validate these fields
 var luisAppId = process.env.LuisAppId;
@@ -43,9 +45,8 @@ var luisAPIHostName = process.env.LuisAPIHostName || 'westus.api.cognitive.micro
 
 const LuisModelUrl = 'https://' + luisAPIHostName + '/luis/v2.0/apps/' + luisAppId + '?subscription-key=' + luisAPIKey + '&staging=true&verbose=true&timezoneOffset=0&q=';
 
-//const LuisModelUrl = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/40bb5710-6605-411c-b2e4-def1113b8ead?subscription-key=8363b631fdc04d2eb76db7ecdd1595e2&staging=true&verbose=true&timezoneOffset=0&q='
-
 console.log(LuisModelUrl)
+
 var recognizer = new builder.LuisRecognizer(LuisModelUrl);
 bot.recognizer(recognizer);
 
@@ -183,25 +184,33 @@ bot.dialog('Order', [
           "canonicalForm": "Optus",
           "list": []
         },
-        {
-          "canonicalForm": "Microsoft",
-          "list": []
-        },
-        {
-          "canonicalForm": "sony",
-          "list": []
-        },
-        {
-          "canonicalForm": "dell",
-          "list": []
-        },
-        {
-          "canonicalForm": "ibm",
-          "list": []
-        }
+        ...
       ]
     }*/
 function getStockListFromLuisConfig() {
     const stockList = luis.closedLists.filter(list=>list.name === 'Stocks')[0]
     return stockList.subLists.map(element=>element.canonicalForm)
 }
+
+const logUserConversation = (event) => {
+    // console.log(event)
+    var logUrl=botLoggerHostName+'/conversation/log?conversationId='+event.address.conversation.id
+    console.log(logUrl)
+    var requestData = {
+        url: logUrl,
+        json: true
+    };
+    request.get(requestData, function (error, response, body) {});
+};
+
+// Middleware for logging
+bot.use({
+    receive: function (event, next) {
+        logUserConversation(event);
+        next();
+    },
+    send: function (event, next) {
+        logUserConversation(event);
+        next();
+    }
+});
