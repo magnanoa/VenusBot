@@ -1,27 +1,61 @@
-## Use Azure app service editor
 
-1. make code change in the online editor
-
-Your code changes go live as the code changes are saved.
-
-## Use Visual Studio Code
-
-### Build and debug
-1. download source code zip and extract source in local folder
-2. open the source folder in  Visual Studio Code
-3. make code changes
-4. download and run [botframework-emulator](https://emulator.botframework.com/)
-5. connect the emulator to http://localhost:3987
-
-### Publish back
+# VenusBot: OMS with MS Bot framework + LUIS recogniser
 
 ```
-npm run azure-publish
+  ____              _       _           _   _
+ |  _ \            | |     | |         | | | |
+ | |_) | __ _ _ __ | | __  | |_ ___    | |_| |__   ___
+ |  _ < / _` | '_ \| |/ /  | __/ _ \   | __| '_ \ / _ \
+ | |_) | (_| | | | |   <   | || (_) |  | |_| | | |  __/
+ |____/ \__,_|_| |_|_|\_\   \__\___/    \__|_| |_|\___|
+      __
+      \ \        ________  __________  ______  ______
+  _____\ \      / ____/ / / /_  __/ / / / __ \/ ____/
+ |______> >    / /_  / / / / / / / / / / /_/ / __/
+       / /    / __/ / /_/ / / / / /_/ / _, _/ /__
+      /_/    /_/    \____/ /_/  \____/_/ |_/_____/
+
+                               - Hackathon 2017 -
 ```
 
-## Use continuous integration
+* Bot integration with Luis via LuisRecognizer
 
-If you have setup continuous integration, then your bot will automatically deployed when new changes are pushed to the source repository.
+    ![Happy Case](doc/img/bot-v1-happy-case.png)
+
+* Order dialog with homemade Luis entity validation via waterfall
+
+    ![Waterfall](doc/img/bot-v1-waterfall.png)
+
+* Basic support for validation exceptions and interruptions
+
+    ![Validation exception](doc/img/bot-v1-exceptions.png)
+
+    ![Validation exception](doc/img/bot-v1-exceptions2.png)
+
+### Issues / Next Steps
+* Can we make use of [LUIS action binding example framework](https://github.com/ahilton/BotBuilder-Samples/tree/master/Node/blog-LUISActionBinding) to do a better job of LUIS entity validation
+* Can we easily integrate with [speech-enabled channel](https://docs.microsoft.com/en-us/bot-framework/nodejs/bot-builder-nodejs-text-to-speech)? (e.g. Cortana)
+* Send events to UI to support ambient info display
+* Trigger action & end dialog
 
 
+### Prerequisites
+
+* Latest Node.js with NPM. Download it from [here](https://nodejs.org/en/download/).
+* The Bot Framework Emulator. To install the Bot Framework Emulator, download it from [here](https://emulator.botframework.com/).
+* An instance of LUIS(.ai) configured and trained using the luis.json project file. Deploy staging end point and add url to .env file.
+
+### Running (locally)
+
+Within project directory:
+* npm install
+* node app.js
+
+Start bot emulator:
+* Connect with default params: http://localhost:3978/api/messages
+
+### Useful docs
+
+* https://github.com/ahilton/BotBuilder-Samples/tree/master/Node/blog-LUISActionBinding
+* https://docs.botframework.com/en-us/node/builder/calling-reference/modules/_botbuilder_d_.html
 
