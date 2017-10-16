@@ -193,7 +193,7 @@ function getStockListFromLuisConfig() {
 }
 
 const logUserConversation = (event) => {
-    // console.log(event)
+    console.log(event)
     var logUrl=botLoggerHostName+'/conversation/log?conversationId='+event.address.conversation.id
     console.log(logUrl)
     var requestData = {
