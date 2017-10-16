@@ -36,7 +36,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
     session.send('Sorry, the OMS autobot didn\'t understand \'%s\'. Type \'order\' if you would like to place an order.', session.message.text);
 });
 
-var botLoggerHostName = process.env.BotLogHostName;
+var botLoggerHostName =  process.env.BotLogHostName; //'http://localhost:8080'
 
 // Make sure you add code to validate these fields
 var luisAppId = process.env.LuisAppId;
@@ -82,11 +82,7 @@ bot.dialog('Order', [
         }
 
         if (!order.stock) {
-            builder.Prompts.text(session, 'What stock would you like to order?', {
-                speak: 'What stock would you like to order?',
-                retrySpeak: 'What stock would you like to order? Say cancel to dismiss me',
-                inputHint: builder.InputHint.expectingInput
-            })
+            promptForText(session, order, 'What stock would you like to order?')
         } else {
             next()
         }
@@ -113,7 +109,7 @@ bot.dialog('Order', [
             session.replaceDialog('Order', {dialogData: dialogData, isReprompt: true});
         }
         else if (!order.qty){
-            builder.Prompts.number(session, 'How many '+order.stock+' would you like to order?')
+            promptForNumber(session, order, 'How many '+order.stock+' would you like to order?')
         } else {
             next()
         }
@@ -131,8 +127,7 @@ bot.dialog('Order', [
         }
 
         if (!order.direction){
-            builder.Prompts.choice(session, 'Would you like to buy or sell '+order.stock+'?', ['Buy','Sell'],
-                { listStyle: builder.ListStyle.button })
+            promptForChoice(session, order, 'Would you like to buy or sell '+order.stock+'?', ['Buy','Sell'], builder.ListStyle.button)
         } else {
             next()
         }
@@ -157,8 +152,17 @@ bot.dialog('Order', [
 
         }
 
-        builder.Prompts.text(session, 'Placing a ['+order.direction+'] order for ['+order.qty+'] of ['+order.stock+']...');
+        promptForConfirmation(session, order, 'Confirm you would like to place a '+order.direction+' order for '+order.qty+' of '+order.stock+'?');
+    },
+    /*
+        --4-- Confirmation?
+     */
+    function (session, results) {
+        var {dialogData} = session
+        var {order} = dialogData
 
+        order.completed=results.response
+        promptForText(session, order, order.completed?'OK, order completed!':'Order cancelled.')
     }
 ]).triggerAction({
     matches: 'Order',
@@ -169,6 +173,89 @@ bot.dialog('Order', [
     confirmPrompt: "Are you sure you want to stop ordering?"
 });
 
+
+const promptForConfirmation = (session, order, text) => {
+    builder.Prompts.confirm(session, text, {
+        speak: text,
+        retrySpeak: text+' Say cancel to dismiss me',
+        inputHint: builder.InputHint.expectingInput,
+    })
+    logOrderState(session, order, text)
+}
+
+const promptForText = (session, order, text) => {
+    builder.Prompts.text(session, text, {
+        speak: text,
+        retrySpeak: text+' Say cancel to dismiss me',
+        inputHint: builder.InputHint.expectingInput,
+    })
+    logOrderState(session, order, text)
+}
+
+const promptForNumber = (session, order, text) => {
+    builder.Prompts.number(session, text, {
+        speak: text,
+        retrySpeak: text+' Say cancel to dismiss me',
+        inputHint: builder.InputHint.expectingInput,
+    })
+    logOrderState(session, order, text)
+}
+
+const promptForChoice = (session, order, text, choices, listStyle) => {
+    builder.Prompts.choice(session, text, choices, {
+        listStyle:listStyle,
+        speak: text,
+        retrySpeak: text+' Say cancel to dismiss me',
+        inputHint: builder.InputHint.expectingInput
+    })
+    logOrderState(session, order, text, choices)
+}
+
+
+const logOrderState = (session, order, message, choices) => {
+
+    var conversationId, channel, lastUserMessage, lastOrderState, lastSystemMessage
+    if (session.message && session.message.address && session.message.address.conversation){
+        //console.log('Conversationid:')
+        conversationId = session.message.address.conversation.id
+        channel = session.message.address.channelId
+    }
+    if (session.message && session.message.type === 'message'){
+        //console.log('User message:')
+        lastUserMessage = session.message.text
+    }
+    if (order){
+        //console.log('Order:')
+        lastOrderState = order
+    }
+    if (message){
+        //console.log('System message:')
+        lastSystemMessage = message
+    }
+
+    const data = {
+        conversationId:conversationId,
+        channel:channel,
+        lastUserMessage:lastUserMessage,
+        lastOrderState:lastOrderState,
+        lastSystemMessage:lastSystemMessage,
+        choices:choices?choices:[]
+    }
+    console.log(data)
+    performOrderStateLogging(data)
+}
+
+const performOrderStateLogging = (data) => {
+    var logUrl=botLoggerHostName+'/order/log'
+    console.log('logging order state to url: '+logUrl)
+    var requestData = {
+        url: logUrl,
+        body: data,
+        json: true
+    };
+    //request.get(requestData, function (error, response, body) {});
+    request.put(requestData, function (error, response, body) {})
+};
 
 
 /*
@@ -192,25 +279,42 @@ function getStockListFromLuisConfig() {
     return stockList.subLists.map(element=>element.canonicalForm)
 }
 
-const logUserConversation = (event) => {
-    console.log(event)
-    var logUrl=botLoggerHostName+'/conversation/log?conversationId='+event.address.conversation.id
-    console.log(logUrl)
-    var requestData = {
-        url: logUrl,
-        json: true
-    };
-    request.get(requestData, function (error, response, body) {});
-};
+// const logUserConversation = (event) => {
+//     //console.log(event)
+//     var logUrl=botLoggerHostName+'/conversation/log?conversationId='+event.address.conversation.id
+//     //console.log(logUrl)
+//     var requestData = {
+//         url: logUrl,
+//         json: true
+//     };
+// };
+//
+// const logUserSession = (session) => {
+//     //console.log(session)
+//     if (session.sessionState && session.sessionState.callstack){
+//         console.log("------*********")
+//         var {callstack} = session.sessionState
+//         console.log()
+//         for (var i=0; i<callstack.length; i++){
+//             if (callstack[i].id==='*:Order' && callstack[i].state.order) {
+//                 console.log(callstack[i].state.order)
+//             }
+//         }
+//         console.log("------*********;;;;;;;")
+//     }
+// }
 
 // Middleware for logging
-bot.use({
-    receive: function (event, next) {
-        logUserConversation(event);
-        next();
-    },
-    send: function (event, next) {
-        logUserConversation(event);
-        next();
-    }
-});
+// bot.use({
+//     receive: function (event, next) {
+//         logUserConversation(event);
+//         next();
+//     },
+//     send: function (event, next) {
+//         logUserConversation(event);
+//         next();
+//     },
+//     botbuilder: function (session, next) {
+//         next();
+//     }
+// });
