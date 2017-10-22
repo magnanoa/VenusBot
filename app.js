@@ -50,84 +50,22 @@ console.log(LuisModelUrl)
 var recognizer = new builder.LuisRecognizer(LuisModelUrl);
 bot.recognizer(recognizer);
 
-// Storing Order State
-//var {orders} = session.dialogData.orders = [];
-
+// Order Query Functionality
 bot.dialog('OrderQuery', [
     function (session, args, next) {
-        var orderQuery = session.dialogData.orderQuery = {}
-        //var order = session.dialogData.order = {}
-        //var orderStates =
+        var intent = args.intent
+        console.log(intent.entities)
+        var stock = builder.EntityRecognizer.findEntity(intent.entities, 'Stocks')
+
+        if (stock && stock.resolution){
+            console.log(stock.entity)
+            getHoldingForStock(session.message.address,stock.entity.toString())
+        } else {
             getHoldings(session.message.address)
 
-      //  if (!typeof(order)== 'Object'){
-       //     promptForOrderQueryDetails(session,'You do not have any orders!');
-     //   }
-
-        if (args && args.isReprompt && args.dialogData && args.dialogData.orderQuery){
-            // We were sent here to revalidate some user input
-            // Reinitialise the order data using the args
-            orderQuery = session.dialogData.orderQuery = args.dialogData.orderQuery
         }
-        else if (args && args.intent && args.intent.entities){
-            // LUIS recognizer triggered dialog
-            // Scrape out all intent entities
-            var {intent} = args
-            console.log(intent.entities)
-
-            var stock = builder.EntityRecognizer.findEntity(intent.entities, 'Stocks')
-            if (stock && stock.resolution){
-                orderQuery.stock = stock.resolution.values[0]
-            }
-
-         //   var quantity = builder.EntityRecognizer.findEntity(intent.entities, 'builtin.number')
-         //   if (quantity && quantity.resolution){
-         //       order.qty = quantity.resolution.value
-         //   }
-
-            var direction = builder.EntityRecognizer.findEntity(intent.entities, 'OrderDirection')
-            if (direction && direction.entity){
-                orderQuery.direction = direction.entity
-            }
-        }
-
-        if (!orderQuery.stock) {
-            promptForText(session, orderQuery, 'Orders For Which Stock?')
-        } else {
-            next()
-        }
-
-    },
-    /*
-     --1-- Validate Query Type
-  */
-    function (session, results, next) {
-        var {dialogData} = session
-        var {orderQuery} = dialogData
-
-        if (!orderQuery.stock) {
-            // Example response: { index: 0, entity: 'Apple', score: 0.8 }
-            const bestMatch = builder.EntityRecognizer.findBestMatch(getStockListFromLuisConfig(), results.response, 0.7)
-            console.log(bestMatch)
-            if (bestMatch){
-                orderQuery.stock = bestMatch.entity
-            }
-        }
-
-        if (!orderQuery.stock) {
-            // Unable to validate stock, send back to the start...
-            session.replaceDialog('OrderQuery', {dialogData: dialogData, isReprompt: true});
-        } else {
-            //next()
-            if (!orders){
-                promptForOrderQueryDetails(session,'You have an Order for ' + order.direction + ' order for ' + order.qty + ' of ' + order.stock + '!');
-            } else {
-                promptForOrderQueryDetails(session,'You do not have any orders!');
-            }
-        }
-
+        session.endDialog()
     }
-
 ]).triggerAction({
     matches: 'OrderQuery',
     /*TODO:: disable confirmation prompt to avoid 'ibm'/'microsoft' stock confirmation triggering unwanted new dialog confirmation*/
@@ -137,7 +75,7 @@ bot.dialog('OrderQuery', [
     confirmPrompt: "Are you sure you want to make a query request?"
 });
 
-// ------------------------- ORDER Functionality
+// ORDER Functionality
 bot.dialog('Order', [
     function (session, args, next) {
         var order = session.dialogData.order = {}
@@ -165,8 +103,10 @@ bot.dialog('Order', [
             }
 
             var direction = builder.EntityRecognizer.findEntity(intent.entities, 'OrderDirection')
+
             if (direction && direction.entity){
-                order.direction = direction.entity
+                order.direction = getNormalisedDirection(direction.entity.toLowerCase())
+
             }
         }
 
@@ -181,7 +121,10 @@ bot.dialog('Order', [
         --1-- Validate stock
      */
     function (session, results, next) {
-        var {dialogData} = session
+
+        console.log(session.dialogData)
+        //var {dialogData} = session
+        var dialogData = session.dialogData
         var {order} = dialogData
 
         if (!order.stock) {
@@ -240,8 +183,11 @@ bot.dialog('Order', [
             }
 
         }
-
-        promptForConfirmation(session, order, 'Confirm you would like to place a '+order.direction+' order for '+order.qty+' of '+order.stock+'?');
+        var price = getSharePrice(order.stock).toFixed(2)
+        order.price = price
+        var totalcost = (price * order.qty).toFixed(2)
+        console.log(order)
+        promptForConfirmation(session, order, 'Confirm you would like to place a '+order.direction+' order for '+order.qty+' of '+order.stock+' at AUD $'+order.price+'? This will cost $'+totalcost);
     },
     /*
         --4-- Confirmation?
@@ -249,9 +195,10 @@ bot.dialog('Order', [
     function (session, results) {
         var {dialogData} = session
         var {order} = dialogData
-
+        var totalcost = (order.price * order.qty).toFixed(2)
         order.completed=results.response
-        promptForText(session, order, order.completed?'OK, order completed!':'Order cancelled.')
+        promptForText(session, order, order.completed?'OK, order completed! Total Cost is AUD $'+totalcost+' at an average price of $'+order.price+' per share.':'Order cancelled.')
+        session.endDialog()
     }
 ]).triggerAction({
     matches: 'Order',
@@ -279,7 +226,19 @@ const promptForConfirmation = (session, order, text) => {
         retrySpeak: text+' Say cancel to dismiss me',
         inputHint: builder.InputHint.expectingInput,
     })
+
     logOrderState(session, order, text)
+}
+
+
+const promptForChoice = (session, order, text, choices, listStyle) => {
+    builder.Prompts.choice(session, text, choices, {
+        listStyle:listStyle,
+        speak: text,
+        retrySpeak: text+' Say cancel to dismiss me',
+        inputHint: builder.InputHint.expectingInput
+    })
+    logOrderState(session, order, text, choices)
 }
 
 const promptForText = (session, order, text) => {
@@ -300,15 +259,6 @@ const promptForNumber = (session, order, text) => {
     logOrderState(session, order, text)
 }
 
-const promptForChoice = (session, order, text, choices, listStyle) => {
-    builder.Prompts.choice(session, text, choices, {
-        listStyle:listStyle,
-        speak: text,
-        retrySpeak: text+' Say cancel to dismiss me',
-        inputHint: builder.InputHint.expectingInput
-    })
-    logOrderState(session, order, text, choices)
-}
 
 
 const logOrderState = (session, order, message, choices) => {
@@ -356,29 +306,6 @@ const performOrderStateLogging = (data) => {
     request.put(requestData, function (error, response, body) {})
 };
 
-
-function getCompletedOrders()  {
-    var getCompletedOrderUrl=botLoggerHostName+'/holdings'
-    console.log('Getting ompleted Orders: '+getCompletedOrderUrl)
-    var requestData = {
-        url: getCompletedOrderUrl,
-        //body: data,
-        json: true
-    };
-    var body
-    request.get(requestData, function (error, response, body) {
-        console.log(body)``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
-        if (body&& !error){
-            var text
-            var stocks = Object.keys(body);
-        }
-    })
-
-    return body
-    //request.put(requestData, function (error, response, body) {})
-};
-
-
 function getHoldings(address)  {
     var getHoldingsUrl=botLoggerHostName+'/holdings'
     var body = null
@@ -394,7 +321,7 @@ function getHoldings(address)  {
             var text
             var stocks = Object.keys(body);
             if(!stocks || stocks.length === 0){
-                text = "Ok you ahve not placed any ordersyet.  Say Orders to get started."
+                text = "Ok you ahve not placed any orders yet.  Say Orders to get started."
             } else {
                 text = "Ok, you have "+stocks.map((stock)=>''+body[stock]+' shares of '+stock+'')
             }
@@ -408,6 +335,44 @@ function getHoldings(address)  {
 
    // return body
     //request.put(requestData, function (error, response, body) {})
+};
+
+function getHoldingForStock(address, stockname)  {
+    var getHoldingForStockUrl=botLoggerHostName+'/stock/holding'
+    var body = null
+    console.log('Getting Holdings: '+getHoldingForStockUrl)
+    var requestData = {
+        url: getHoldingForStockUrl,
+        body: stockname,
+        json: true
+    };
+
+    request.get(requestData, function (error, response, body) {
+        console.log(body)
+        var text
+
+        if (error){
+         return
+        }else if(!stockname || stockname.length === 0){
+            text = "Ok you have asked about an invalid stock!"
+        } else {
+            if (body===0){
+                text = "Ok, you have no shares of "+stockname+"!"
+            } else if (body){
+              //  var values = Object.keys(body);
+                text = "Ok, you have "+body.toString()+' shares of '+stockname+''
+            } else{
+                return
+            }
+        }
+
+        var msg = new builder.Message().address(address)
+        msg.text(text)
+        msg.textLocale('en-US')
+        bot.send(msg)
+    })
+
+
 };
 
 /*
@@ -429,6 +394,40 @@ function getHoldings(address)  {
 function getStockListFromLuisConfig() {
     const stockList = luis.closedLists.filter(list=>list.name === 'Stocks')[0]
     return stockList.subLists.map(element=>element.canonicalForm)
+}
+
+// Function to determine the Order direction based on various definitions
+function getNormalisedDirection(directionStr) {
+    if (directionStr.toLowerCase() === 'sell' || directionStr.toLowerCase() === 'loose' || directionStr.toLowerCase() === 'short' || directionStr.toLowerCase() === 'cut' ){
+        return 'sell'
+    }
+    return 'buy'
+}
+
+
+// Function to determine the Order direction based on various definitions
+function getSharePrice(stock) {
+    var min = 10
+    var max = 24
+    if (stock.toLowerCase()==='ibm'){
+        min = 170
+        max = 210
+    } else if(stock.toLowerCase() ==='microsoft'){
+        min = 80
+        max = 101
+    } else if(stock.toLowerCase() ==='apple') {
+        min = 160
+        max = 190
+    } else if(stock.toLowerCase() ==='sony') {
+        min = 30
+        max = 40
+    }
+
+    return getRandomPrice(min, max);
+}
+
+function getRandomPrice(min, max) {
+    return Math.random() * (max - min) + min;
 }
 
 // const logUserConversation = (event) => {
