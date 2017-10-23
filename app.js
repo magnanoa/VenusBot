@@ -187,7 +187,7 @@ bot.dialog('Order', [
         order.price = price
         var totalcost = (price * order.qty).toFixed(2)
         console.log(order)
-        promptForConfirmation(session, order, 'Confirm you would like to place a '+order.direction+' order for '+order.qty+' of '+order.stock+' at AUD $'+order.price+'? This will cost $'+totalcost);
+        promptForConfirmation(session, order, 'Confirm you would like to place a '+order.direction+' order for '+order.qty+' of '+order.stock+' at AUD $'+order.price+'? The total value is $'+totalcost);
     },
     /*
         --4-- Confirmation?
@@ -197,7 +197,7 @@ bot.dialog('Order', [
         var {order} = dialogData
         var totalcost = (order.price * order.qty).toFixed(2)
         order.completed=results.response
-        promptForText(session, order, order.completed?'OK, order completed! Total Cost is AUD $'+totalcost+' at an average price of $'+order.price+' per share.':'Order cancelled.')
+        promptForText(session, order, order.completed?'OK, order completed! Total value is AUD $'+totalcost+' at an average price of $'+order.price+' per share.':'Order cancelled.')
         session.endDialog()
     }
 ]).triggerAction({
@@ -337,6 +337,7 @@ function getHoldings(address)  {
     //request.put(requestData, function (error, response, body) {})
 };
 
+/*
 function getHoldingForStock(address, stockname)  {
     var getHoldingForStockUrl=botLoggerHostName+'/stock/holding'
     var body = null
@@ -359,10 +360,44 @@ function getHoldingForStock(address, stockname)  {
             if (body===0){
                 text = "Ok, you have no shares of "+stockname+"!"
             } else if (body){
-              //  var values = Object.keys(body);
+                var values = Object.keys(body);
                 text = "Ok, you have "+body.toString()+' shares of '+stockname+''
             } else{
                 return
+            }
+        }
+
+        var msg = new builder.Message().address(address)
+        msg.text(text)
+        msg.textLocale('en-US')
+        bot.send(msg)
+    })
+
+
+};*/
+
+function getHoldingForStock(address, stockname)  {
+    var getHoldingForStockUrl=botLoggerHostName+'/stock/holding'
+    var body = null
+    console.log('Getting Holdings: '+getHoldingForStockUrl)
+    var requestData = {
+        url: getHoldingForStockUrl,
+        body: stockname,
+        json: true
+    };
+
+    request.get(requestData, function (error, response, body) {
+        console.log(body)
+        var text
+
+        if (body && !error){
+            var values = Object.keys(body);
+            if( values.length==0){
+                text = "Ok, you have no shares of "+stockname+"!"
+            } else {
+                var avgPrice = body["avgPrice"];
+                var totalPrice = body["totalPrice"];
+                text = "Ok, you have "+body["qty"]+' shares of '+stockname+' at an average price of $'+(avgPrice * 1).toFixed(2)+'. Total values for this Holding is AUD $'+(totalPrice *  1).toFixed(2)+"."
             }
         }
 

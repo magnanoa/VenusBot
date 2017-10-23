@@ -474,6 +474,21 @@
       "text": "how many ibm?",
       "intent": "OrderQuery",
       "entities": []
+    },
+    {
+      "text": "show me my apple",
+      "intent": "OrderQuery",
+      "entities": []
+    },
+    {
+      "text": "show me my ibm shares",
+      "intent": "OrderQuery",
+      "entities": []
+    },
+    {
+      "text": "show me my apple holdings",
+      "intent": "OrderQuery",
+      "entities": []
     }
   ]
 }
