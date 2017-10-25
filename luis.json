@@ -20,6 +20,9 @@
       }
     },
     {
+      "name": "Greeting"
+    },
+    {
       "name": "None"
     },
     {
@@ -123,6 +126,16 @@
   "regex_features": [],
   "utterances": [
     {
+      "text": "hello",
+      "intent": "Greeting",
+      "entities": []
+    },
+    {
+      "text": "hi",
+      "intent": "Greeting",
+      "entities": []
+    },
+    {
       "text": "what do i have?",
       "intent": "OrderQuery",
       "entities": []
@@ -149,6 +162,11 @@
       ]
     },
     {
+      "text": "morning",
+      "intent": "Greeting",
+      "entities": []
+    },
+    {
       "text": "ibm",
       "intent": "Order",
       "entities": []
@@ -165,6 +183,11 @@
       ]
     },
     {
+      "text": "goodmorning",
+      "intent": "Greeting",
+      "entities": []
+    },
+    {
       "text": "i would like to place an order",
       "intent": "Order",
       "entities": [
@@ -174,6 +197,11 @@
           "endPos": 29
         }
       ]
+    },
+    {
+      "text": "g'day",
+      "intent": "Greeting",
+      "entities": []
     },
     {
       "text": "what is my order?",
@@ -203,6 +231,11 @@
     },
     {
       "text": "what orders do i have",
+      "intent": "OrderQuery",
+      "entities": []
+    },
+    {
+      "text": "what am i holding?",
       "intent": "OrderQuery",
       "entities": []
     },
@@ -488,6 +521,21 @@
     {
       "text": "show me my apple holdings",
       "intent": "OrderQuery",
+      "entities": []
+    },
+    {
+      "text": "order 500 apple shares",
+      "intent": "Order",
+      "entities": []
+    },
+    {
+      "text": "order 500 shares of apple",
+      "intent": "Order",
+      "entities": []
+    },
+    {
+      "text": "order 500 apple",
+      "intent": "Order",
       "entities": []
     }
   ]
