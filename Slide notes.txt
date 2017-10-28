@@ -1,0 +1,21 @@
+
+Slide 1
+- Core of our solution is AI and Cognitive Services specfically those provided by the Azure platfrom
+	- This allows us to do really smart thing very rapidly
+	- The abilities our solution required the ability to recognise Speech recocnition and to convert that the speech to text
+	- But the real heart of it was the use of LUIS and bots, cloud infrastructure.  
+	- Using Luis which stands for Language Understanding Intelligence service. We were able to define intents, entities and actions relativley quickly, 
+	and then we could use Luis's machine learning ability to train it to understand different turns of phrases and speech quirks
+	
+- When we looked at our problem statement, we saw that the botframework gave us a very powerfull way to interat and direct the conversation with the users
+
+Slide 2
+- The reason to use the bots were its integration with LUIS made it easy for the BOT to act on LUIS understanding of our speech.  
+- The bots would understand the intent and start a dialog flow i.e. Book Order, or querying your holings
+- Finally, bots had built in integration to multiple channels
+- Got some live demos later, but here is a quick video of Our first channel integration into Skype 
+	- it will demonstates how the bot can direct the conversation 
+- here is a quick video of integrating to cortana for speech	
+
+ 
+	
